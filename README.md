@@ -186,7 +186,3 @@ python scripts/verify_hash.py
 
 ## 许可证 📄
 本项目采用 MIT 许可证。详见 [LICENSE](LICENSE)。
-``` 
-
-Replace `your_username` in the clone URL with your GitHub username.  
-This README includes badges, clear section headers, and bilingual support. Adjust the repository links and details as needed! 🎉
