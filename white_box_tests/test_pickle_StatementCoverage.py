@@ -1,14 +1,12 @@
 import pytest
-import io
 import hashlib
-import tempfile
 import builtins
 import importlib.util
 import os
 import sys
 import decimal
 
-# Define a testable custom class at module level so pickle can import it by name
+# 在模块级别定义一个可测试的自定义类，以便 pickle 可以按名称导入它
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -16,7 +14,7 @@ class Point:
     def __eq__(self, other):
         return isinstance(other, Point) and self.x == other.x and self.y == other.y
 
-# Ensure the python fallback implementation in my_pickle is used (not the C _pickle).
+# 模拟缺少 _pickle 模块，确保使用 my_pickle 中的 Python 实现（而非 C 实现）
 orig_import = builtins.__import__
 def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     if name == '_pickle':
@@ -24,13 +22,13 @@ def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     return orig_import(name, globals, locals, fromlist, level)
 builtins.__import__ = fake_import
 
-# Load the my_pickle module from file location
+# 从文件位置加载 my_pickle 模块
 here = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("my_pickle", os.path.join(here, "my_pickle.py"))
 my_pickle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(my_pickle)
 
-# Restore import function
+# 恢复原始导入函数
 builtins.__import__ = orig_import
 
 def test_primitives_and_bytearray():
@@ -64,7 +62,7 @@ def test_nested_structures_and_stable_hash():
     data = my_pickle.dumps(obj)
     result = my_pickle.loads(data)
     assert result == obj
-    # Stable serialization: two dumps should yield identical bytes
+    # 稳定序列化：两次 dumps 应产生相同的字节
     data2 = my_pickle.dumps(obj)
     assert hashlib.sha256(data).hexdigest() == hashlib.sha256(data2).hexdigest()
 
@@ -104,17 +102,17 @@ def test_loads_type_error():
         my_pickle.loads("this is a str, not bytes")
 
 def test_protocol_and_buffer_callback():
-    # protocol < 0 sets to HIGHEST_PROTOCOL - should not error
+    # protocol < 0 时使用 HIGHEST_PROTOCOL，不应报错
     data = my_pickle.dumps([1, 2, 3], protocol=-1)
     result = my_pickle.loads(data)
     assert result == [1, 2, 3]
-    # protocol > HIGHEST_PROTOCOL raises ValueError
+    # protocol > HIGHEST_PROTOCOL 应抛出 ValueError
     with pytest.raises(ValueError):
         my_pickle.dumps([1, 2], protocol=my_pickle.HIGHEST_PROTOCOL+1)
-    # buffer_callback with protocol <5 should error
+    # 在 protocol < 5 时传入 buffer_callback 应报错
     with pytest.raises(ValueError):
         my_pickle.dumps([1, 2, 3], buffer_callback=lambda b: True)
-    # protocol=5 with buffer_callback is allowed
+    # protocol=5 时使用 buffer_callback 是允许的
     data = my_pickle.dumps([7, 8], protocol=5, buffer_callback=lambda b: b"")
     assert my_pickle.loads(data) == [7, 8]
 
@@ -124,8 +122,7 @@ def test_type_error_on_invalid_file():
     with pytest.raises(TypeError):
         my_pickle.dump(123, NoWrite())
 
-
-# 在模块级定义新增测试类（确保反序列化时可导入）
+# 在模块级别定义额外的测试类（确保反序列化时可导入）
 class SlottedClass:
     __slots__ = ['a', 'b']
     def __init__(self, a, b):
@@ -157,13 +154,12 @@ class CustomStateClass:
     def __eq__(self, other):
         return isinstance(other, CustomStateClass) and self.name == other.name
 
-# 测试函数
+# 测试复杂数据类型
 def test_complex_data_types():
     cases = [
         frozenset([1, 2, 3]),
         complex(3, 4),
         decimal.Decimal("3.141592653589793238462643383279"),
-        # 注意：decimal.Decimal 需要确保反序列化时 decimal 模块已导入
     ]
     for obj in cases:
         data = my_pickle.dumps(obj)
@@ -180,7 +176,6 @@ def test_slotted_class():
     # 检查 __slots__ 属性是否保留
     assert isinstance(result, SlottedClass)
     assert not hasattr(result, '__dict__')
-
 
 def test_inheritance_and_dynamic_class():
     # 测试继承类
@@ -209,11 +204,10 @@ def test_custom_state_methods():
     assert obj.name == "Alice"  # 确保原始对象未被修改
 
 def test_module_and_function_objects():
-    # 模块对象应不可序列化
-    with pytest.raises((my_pickle.PicklingError, TypeError)):  # 兼容不同实现
+    # 模块对象不可序列化，应抛出错误
+    with pytest.raises((my_pickle.PicklingError, TypeError)):
         my_pickle.dumps(sys)
 
-    # 函数对象（如 lambda）应不可序列化
+    # 函数对象（如 lambda）不可序列化，应抛出 PicklingError
     with pytest.raises(my_pickle.PicklingError):
         my_pickle.dumps(lambda x: x + 1)
-
