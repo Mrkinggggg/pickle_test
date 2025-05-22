@@ -1,6 +1,6 @@
 # Pickle Test Suite 🥒
 
-![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Python Version](https://img.shields.io/badge/Python-3.7%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 [![Code Style: PEP8](https://img.shields.io/badge/code%20style-PEP8-brightgreen)](https://www.python.org/dev/peps/pep-0008/)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/your_username/pickle_test) <!-- 请将 your_username 替换为您的 GitHub 用户名 -->
